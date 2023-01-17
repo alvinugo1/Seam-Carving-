@@ -29,7 +29,7 @@ The first step is to calculate the energy of each pixel, which is a measure of t
 
 ![image](https://user-images.githubusercontent.com/93239793/212788687-f54b41d2-6fe6-4382-a8f4-e713a2428333.png)
 
-The energy is high (white) for pixels in the image where there is a rapid color gradient (such as the boundary between the sea and sky and the boundary between the surfing Josh Hug on the left and the ocean behind him). The seam-carving technique avoids removing such high-energy pixels.
+The energy is high (white) for pixels in the image where there is a rapid color gradient (such as the boundary between the sea and sky and the boundary between the surfer on the left and the ocean behind him). The seam-carving technique avoids removing such high-energy pixels.
 
 ### Seam Identification 
 The next step is to find a vertical seam of minimum total energy. This is similar to the classic shortest path problem in an edge-weighted digraph except for the following:
