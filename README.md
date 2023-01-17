@@ -1,7 +1,7 @@
 
 # Seams Carving 
 
-Seam Carving for Content Aware Image Resizing and Object removal. 
+Seam Carving for Content Aware Image Resizing. 
 
 
 ## Introduction 
