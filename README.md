@@ -28,6 +28,7 @@ We also assume that the color of a pixel is represented in RGB space, using thre
 The first step is to calculate the energy of each pixel, which is a measure of the importance of each pixel—the higher the energy, the less likely that the pixel will be included as part of a seam (as we'll see in the next step). In this Project, I implement the dual-gradient energy function, which is described below.
 
 ![image](https://user-images.githubusercontent.com/93239793/212788687-f54b41d2-6fe6-4382-a8f4-e713a2428333.png)
+
 The energy is high (white) for pixels in the image where there is a rapid color gradient (such as the boundary between the sea and sky and the boundary between the surfing Josh Hug on the left and the ocean behind him). The seam-carving technique avoids removing such high-energy pixels.
 
 ### Seam Identification 
