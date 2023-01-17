@@ -47,37 +47,47 @@ The final step is to remove from the image all of the pixels along the seam.
 
 ### The SeamCarver API.
 
-public class SeamCarver {
+#### public class SeamCarver {
 
    // create a seam carver object based on the given picture
-   public SeamCarver(Picture picture)
+   
+   #### public SeamCarver(Picture picture)
 
    // current picture
-   public Picture picture()
+   
+   #### public Picture picture()
 
    // width of current picture
-   public int width()
+   
+   #### public int width()
 
    // height of current picture
-   public int height()
+   
+   #### public int height()
 
    // energy of pixel at column x and row y
-   public double energy(int x, int y)
+   
+   #### public double energy(int x, int y)
 
    // sequence of indices for horizontal seam
-   public int[] findHorizontalSeam()
+   
+   #### public int[] findHorizontalSeam()
 
    // sequence of indices for vertical seam
-   public int[] findVerticalSeam()
+   
+   #### public int[] findVerticalSeam()
 
    // remove horizontal seam from current picture
-   public void removeHorizontalSeam(int[] seam)
+   
+   #### public void removeHorizontalSeam(int[] seam)
 
    // remove vertical seam from current picture
-   public void removeVerticalSeam(int[] seam)
+   
+   #### public void removeVerticalSeam(int[] seam)
 
    //  unit testing (optional)
-   public static void main(String[] args)
+   
+   #### public static void main(String[] args)
 
 }
 
