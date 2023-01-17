@@ -6,7 +6,7 @@ Seam Carving for Content Aware Image Resizing and Object removal.
 
 ## Introduction 
 
-The goal of this project is to perform content-aware image resizing for both reduction and expansion and image object removal with seam carving operator. This allows image to be resized without losing or distorting meaningful content from scaling. In this project, we create a data type that resizes a W-by-H image using the seam-carving technique. 
+The goal of this project is to perform content-aware image resizing for both reduction and expansion with seam carving operator. This allows image to be resized without losing or distorting meaningful content from scaling. In this project, we create a data type that resizes a W-by-H image using the seam-carving technique. 
 
 
 ## Algorithmn Overview 
