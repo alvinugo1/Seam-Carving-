@@ -12,7 +12,7 @@ The goal of this project is to perform content-aware image resizing for both red
 ## Algorithmn Overview 
 Finding and removing a seam involves three parts and a tiny bit of notation:
 
-In image processing, pixel (x, y) refers to the pixel in column x and row y, with pixel (0, 0) at the upper left corner and pixel (W − 1, H − 1) at the bottom right corner. This is consistent with the [Picture](https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/Picture.html) data type in algs4.jar. 
+In image processing, pixel (x, y) refers to the pixel in column x and row y, with pixel (0, 0) at the upper left corner and pixel (W − 1, H − 1) at the bottom right corner.  
 
 Note: This is the opposite of the standard mathematical notation used in linear algebra where (i, j) refers to row i and column j and with Cartesian coordinates where (0, 0) is at the lower left corner.
 a 3-by-4 image
