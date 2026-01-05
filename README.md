@@ -1,94 +1,185 @@
+# Seam Carving (Content-Aware Image Resizing)
 
-# Seams Carving 
+This project implements **content-aware image resizing** using the **seam carving algorithm** in **C++**.  
+Instead of uniformly scaling an image, seam carving removes low-energy paths of pixels (seams), preserving important visual structures such as edges and objects.
 
-Seam Carving for Content Aware Image Resizing. 
+The implementation supports **vertical and horizontal seam removal** using **dynamic programming** and operates on **PPM (P3)** images.
+
+---
+
+## Overview
+
+Given an image of size `W × H`, seam carving works by repeatedly:
+
+1. Computing an **energy value** for each pixel  
+2. Finding a **minimum-energy seam** using dynamic programming  
+3. Removing that seam from the image  
+4. Repeating until the target dimensions are reached  
+
+This approach avoids the distortions caused by traditional scaling methods.
+
+---
+
+## Coordinate System
+
+Pixels are indexed using `(x, y)` coordinates where:
+
+- `(0, 0)` is the **top-left** corner  
+- `x` increases left to right  
+- `y` increases top to bottom  
+
+Example for a `3 × 4` image:
+
+| (0,0) | (1,0) | (2,0) |
+|-------|-------|-------|
+| (0,1) | (1,1) | (2,1) |
+| (0,2) | (1,2) | (2,2) |
+| (0,3) | (1,3) | (2,3) |
+
+Each pixel is represented in **RGB space**, with each channel ranging from `0` to `255`.
+
+---
+
+## Energy Function
+
+Each pixel is assigned an **energy value** representing its visual importance.
+
+This project uses the **dual-gradient energy function**, which measures the squared color gradient in both the horizontal and vertical directions:
+
+- Horizontal gradient: difference between left and right neighbors  
+- Vertical gradient: difference between top and bottom neighbors  
+
+Pixels with strong color changes (edges, object boundaries) have **high energy**, making them less likely to be removed.
+
+Boundary pixels are handled using **clamped coordinates** to prevent out-of-bounds access.
+
+---
+
+## Seam Identification (Dynamic Programming)
+
+A **seam** is a connected path of pixels:
+
+- **Vertical seam**: one pixel per row, top to bottom  
+- **Horizontal seam**: one pixel per column, left to right  
+
+The objective is to find the seam with the **minimum total energy**.
+
+This is solved using **dynamic programming**:
+
+- A cost table stores the minimum cumulative energy to reach each pixel  
+- A parent table stores the predecessor pixel that produced the minimum cost  
+- Vertical seams are computed top-to-bottom  
+- Horizontal seams are computed left-to-right  
+
+Once the DP table is filled, the seam is recovered by backtracking from the minimum-energy endpoint.
+
+This guarantees a **globally optimal seam**, unlike greedy approaches.
+
+---
+
+## Seam Removal
+
+After identifying a seam:
+
+### Vertical Seam Removal
+- One pixel is removed from each row  
+- Remaining pixels shift left  
+- Image width decreases by one  
+
+### Horizontal Seam Removal
+- One pixel is removed from each column  
+- Remaining pixels shift upward  
+- Image height decreases by one  
+
+The image is stored as a dynamically allocated `Pixel**` array and is modified in place.
+
+---
+
+## File Format
+
+The program operates on **PPM (P3)** images:
+
+- ASCII-based format  
+- Header:
+  - `P3`
+  - `width height`
+  - `255`
+- Followed by `width × height` RGB triplets  
+
+The program validates:
+- Correct PPM format  
+- Matching dimensions  
+- Maximum color value of 255  
+- Proper pixel data length  
+
+---
+
+## Features
+
+- Dynamic programming seam carving  
+- Vertical and horizontal seam support  
+- Explicit heap memory management  
+- Robust input validation  
+- In-place image modification  
+- Command-line interface  
+
+---
+
+## Build Instructions
+
+Compile using a C++17-compatible compiler:
+
+```bash
+g++ -std=c++17 -O2 main.cpp functions.cpp -o seamcarve
+```
 
 
-## Introduction 
+## Usage
 
-The goal of this project is to perform content-aware image resizing for both reduction and expansion with seam carving operator. This allows image to be resized without losing or distorting meaningful content from scaling. In this project, we create a data type that resizes a W-by-H image using the seam-carving technique. 
+Run the program:
+```bash
+./seamcarve
+```
 
+You will be prompted for:
+1. Input image filename  
+2. Image width and height  
+3. Target width and height  
 
-## Algorithmn Overview 
-Finding and removing a seam involves three parts and a tiny bit of notation:
+The program iteratively removes seams until the target dimensions are reached.
 
-In image processing, pixel (x, y) refers to the pixel in column x and row y, with pixel (0, 0) at the upper left corner and pixel (W − 1, H − 1) at the bottom right corner.  
+The output file is named:
 
-Note: This is the opposite of the standard mathematical notation used in linear algebra where (i, j) refers to row i and column j and with Cartesian coordinates where (0, 0) is at the lower left corner.
-a 3-by-4 image
+```bash
+carved<width>X<height>.<original_filename>
+```
 
-      (0, 0)  	  (1, 0)  	  (2, 0)  
-      (0, 1)  	  (1, 1)  	  (2, 1)  
-      (0, 2)  	  (1, 2)  	  (2, 2)  
-      (0, 3)  	  (1, 3)  	  (2, 3)  
+---
 
-We also assume that the color of a pixel is represented in RGB space, using three integers between 0 and 255. This is consistent with the [ajva.awt.Color](https://docs.oracle.com/javase/7/docs/api/java/awt/Color.html) data type.
+## Error Handling
 
-### Energy Calculation
-The first step is to calculate the energy of each pixel, which is a measure of the importance of each pixel—the higher the energy, the less likely that the pixel will be included as part of a seam (as we'll see in the next step). In this Project, I implement the dual-gradient energy function, which is described below.
+The program reports errors for:
+- Invalid numeric input  
+- Non-positive dimensions  
+- Target dimensions larger than the original image  
+- File I/O failures  
+- Invalid PPM headers or pixel data  
 
-![image](https://user-images.githubusercontent.com/93239793/212788687-f54b41d2-6fe6-4382-a8f4-e713a2428333.png)
+Execution terminates safely on error.
 
-The energy is high (white) for pixels in the image where there is a rapid color gradient (such as the boundary between the sea and sky and the boundary between the surfer on the left and the ocean behind him). The seam-carving technique avoids removing such high-energy pixels.
+---
 
-### Seam Identification 
-The next step is to find a vertical seam of minimum total energy. This is similar to the classic shortest path problem in an edge-weighted digraph except for the following:
+## Applications
 
-1. The weights are on the vertices instead of the edges.
- 
-2. We want to find the shortest path from any of the W pixels in the top row to any of the W pixels in the bottom row.
- 
-3. The digraph is acyclic, where there is a downward edge from pixel (x, y) to pixels (x − 1,   y + 1), (x, y + 1), and (x + 1, y + 1), assuming that the coordinates are in the    prescribed range.
+Seam carving is useful for:
+- Content-aware image resizing  
+- Aspect ratio adaptation  
+- Preserving visual structure during resizing  
+- Image preprocessing for UI and responsive layouts  
 
-![image](https://user-images.githubusercontent.com/93239793/212789158-93dd400d-5731-4c2a-9dd8-0fc90990fd37.png)
+---
 
-### Seam removal
-The final step is to remove from the image all of the pixels along the seam.
+## Author
 
-### The SeamCarver API.
-
-#### public class SeamCarver {
-
-   // create a seam carver object based on the given picture
-   
-   #### public SeamCarver(Picture picture)
-
-   // current picture
-   
-   #### public Picture picture()
-
-   // width of current picture
-   
-   #### public int width()
-
-   // height of current picture
-   
-   #### public int height()
-
-   // energy of pixel at column x and row y
-   
-   #### public double energy(int x, int y)
-
-   // sequence of indices for horizontal seam
-   
-   #### public int[] findHorizontalSeam()
-
-   // sequence of indices for vertical seam
-   
-   #### public int[] findVerticalSeam()
-
-   // remove horizontal seam from current picture
-   
-   #### public void removeHorizontalSeam(int[] seam)
-
-   // remove vertical seam from current picture
-   
-   #### public void removeVerticalSeam(int[] seam)
-
-   //  unit testing (optional)
-   
-   #### public static void main(String[] args)
-
-}
-
-
+**Alvin Ugo-Mgbemene**  
+C++ implementation of seam carving using dynamic programming.
