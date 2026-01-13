@@ -5,7 +5,7 @@ Instead of uniformly scaling an image, seam carving removes low-energy paths of 
 
 The implementation supports **vertical and horizontal seam removal** using **dynamic programming** and operates on **PPM (P3)** images.
 
----
+
 
 ## Overview
 
@@ -16,9 +16,9 @@ Given an image of size `W × H`, seam carving works by repeatedly:
 3. Removing that seam from the image  
 4. Repeating until the target dimensions are reached  
 
-This approach avoids the distortions caused by traditional scaling methods.
+This approach adapts image dimensions while minimizing distortion to salient content.
 
----
+
 
 ## Coordinate System
 
@@ -31,29 +31,29 @@ Pixels are indexed using `(x, y)` coordinates where:
 Example for a `3 × 4` image:
 
 | (0,0) | (1,0) | (2,0) |
-|-------|-------|-------|
+|------:|------:|------:|
 | (0,1) | (1,1) | (2,1) |
 | (0,2) | (1,2) | (2,2) |
 | (0,3) | (1,3) | (2,3) |
 
 Each pixel is represented in **RGB space**, with each channel ranging from `0` to `255`.
 
----
+
 
 ## Energy Function
 
 Each pixel is assigned an **energy value** representing its visual importance.
 
-This project uses the **dual-gradient energy function**, which measures the squared color gradient in both the horizontal and vertical directions:
+This implementation uses the **dual-gradient energy function**, which computes the squared color gradient in both the horizontal and vertical directions:
 
 - Horizontal gradient: difference between left and right neighbors  
 - Vertical gradient: difference between top and bottom neighbors  
 
 Pixels with strong color changes (edges, object boundaries) have **high energy**, making them less likely to be removed.
 
-Boundary pixels are handled using **clamped coordinates** to prevent out-of-bounds access.
+Boundary pixels are handled using **clamped coordinates** to avoid out-of-bounds access.
 
----
+
 
 ## Seam Identification (Dynamic Programming)
 
@@ -62,7 +62,7 @@ A **seam** is a connected path of pixels:
 - **Vertical seam**: one pixel per row, top to bottom  
 - **Horizontal seam**: one pixel per column, left to right  
 
-The objective is to find the seam with the **minimum total energy**.
+The goal is to find the seam with the **minimum total energy**.
 
 This is solved using **dynamic programming**:
 
@@ -71,11 +71,11 @@ This is solved using **dynamic programming**:
 - Vertical seams are computed top-to-bottom  
 - Horizontal seams are computed left-to-right  
 
-Once the DP table is filled, the seam is recovered by backtracking from the minimum-energy endpoint.
+Once the DP table is filled, the optimal seam is recovered by backtracking from the minimum-energy endpoint.
 
-This guarantees a **globally optimal seam**, unlike greedy approaches.
+This guarantees a **globally optimal seam**, unlike greedy approaches which can get stuck in local minima.
 
----
+
 
 ## Seam Removal
 
@@ -93,7 +93,7 @@ After identifying a seam:
 
 The image is stored as a dynamically allocated `Pixel**` array and is modified in place.
 
----
+
 
 ## File Format
 
@@ -112,18 +112,40 @@ The program validates:
 - Maximum color value of 255  
 - Proper pixel data length  
 
----
 
-## Features
 
-- Dynamic programming seam carving  
-- Vertical and horizontal seam support  
-- Explicit heap memory management  
-- Robust input validation  
-- In-place image modification  
-- Command-line interface  
+## Design Notes
 
----
+- **Algorithm**: Dynamic programming for optimal seam selection  
+- **Memory model**: Explicit heap allocation (`Pixel**`) with manual cleanup  
+- **Edge handling**: Clamped boundary access for gradient computation  
+- **Orientation support**: Vertical and horizontal seams share a common energy model  
+
+
+
+## Complexity
+
+Let `W` be the image width and `H` be the image height.
+
+- Energy computation: `O(W × H)`  
+- Seam computation (DP): `O(W × H)` per seam  
+- Seam removal: `O(W × H)`  
+
+Overall resizing cost scales linearly with the number of seams removed.
+
+
+
+## Correctness & Validation
+
+The implementation explicitly handles:
+- Boundary pixels during energy computation  
+- Input validation for image dimensions and format  
+- Target dimensions exceeding original dimensions  
+- Safe memory allocation and deallocation  
+
+Failures are reported with clear error messages and terminate safely.
+
+
 
 ## Build Instructions
 
@@ -132,7 +154,6 @@ Compile using a C++17-compatible compiler:
 ```bash
 g++ -std=c++17 -O2 main.cpp functions.cpp -o seamcarve
 ```
-
 
 ## Usage
 
@@ -154,20 +175,19 @@ The output file is named:
 carved<width>X<height>.<original_filename>
 ```
 
----
 
-## Error Handling
+## Visual Example
 
-The program reports errors for:
-- Invalid numeric input  
-- Non-positive dimensions  
-- Target dimensions larger than the original image  
-- File I/O failures  
-- Invalid PPM headers or pixel data  
+Below is a representative example of seam carving on a real image.
 
-Execution terminates safely on error.
+- **Left**: Original image  
+- **Middle**: Energy map with selected seams highlighted  
+- **Right**: Image after seam removal  
 
----
+The algorithm preferentially removes low-energy seams while preserving high-energy structures such as edges and foreground objects.
+
+![Seam carving example with energy map and seams](images/seam_carving_example.png)
+
 
 ## Applications
 
@@ -177,7 +197,15 @@ Seam carving is useful for:
 - Preserving visual structure during resizing  
 - Image preprocessing for UI and responsive layouts  
 
----
+
+
+## Future Work
+
+Potential extensions include:
+- Support for binary P6 PPM images
+- Visualization of energy maps and seam paths
+- RAII-based memory management
+- Performance optimizations using contiguous buffers 
 
 ## Author
 
