@@ -1,10 +1,11 @@
-#include <cmath>
 #include <fstream>
 #include <iostream>
-#include <limits>
 #include <string>
+#include <new>
 
 #include "functions.h"
+
+if (!image) return 0;
 
 static int clampInt(int v, int lo, int hi) {
   if (v < lo) return lo;
@@ -45,7 +46,7 @@ int* createSeam(int length) {
 
 void deleteSeam(int* seam) { delete[] seam; }
 
-bool loadImage(std::string filename, Pixel** image, int width, int height) {
+bool loadImage(const std::string& filename, Pixel** image, int width, int height) {
   std::ifstream in(filename);
   if (!in.is_open()) {
     std::cout << "Error: failed to open input file " << filename << "\n";
@@ -89,7 +90,7 @@ bool loadImage(std::string filename, Pixel** image, int width, int height) {
   return true;
 }
 
-bool outputImage(std::string filename, Pixel** image, int width, int height) {
+bool outputImage(const std::string& filename, Pixel** image, int width, int height) {
   std::ofstream out(filename);
   if (!out.is_open()) {
     std::cout << "Error: failed to open output file " << filename << "\n";
@@ -153,7 +154,7 @@ int loadVerticalSeam(Pixel** image, int start_col, int width, int height, int* s
     const int eM = energy(image, mid,   row + 1, width, height);
     const int eR = energy(image, right, row + 1, width, height);
 
-    // tie-break: prefer left, then middle, then right (stable + deterministic)
+
     if (eL <= eM && eL <= eR) col = left;
     else if (eM <= eR)        col = mid;
     else                      col = right;
@@ -183,7 +184,7 @@ int loadHorizontalSeam(Pixel** image, int start_row, int width, int height, int*
     const int eM = energy(image, col + 1, mid,  width, height);
     const int eD = energy(image, col + 1, down, width, height);
 
-    // tie-break: prefer up, then middle, then down
+
     if (eU <= eM && eU <= eD) row = up;
     else if (eM <= eD)        row = mid;
     else                      row = down;
@@ -193,49 +194,167 @@ int loadHorizontalSeam(Pixel** image, int start_row, int width, int height, int*
 }
 
 int* findMinVerticalSeam(Pixel** image, int width, int height) {
-  int* bestSeam = createSeam(height);
-  int* tempSeam = createSeam(height);
-  if (!bestSeam || !tempSeam) {
-    deleteSeam(bestSeam);
-    deleteSeam(tempSeam);
+  if (!image || width <= 0 || height <= 0) return nullptr;
+
+  int** cost = new (std::nothrow) int*[width];
+  int** parent = new (std::nothrow) int*[width];
+  if (!cost || !parent) {
+    delete[] cost;
+    delete[] parent;
     return nullptr;
   }
 
-  int bestEnergy = std::numeric_limits<int>::max();
-
-  for (int start = 0; start < width; ++start) {
-    const int e = loadVerticalSeam(image, start, width, height, tempSeam);
-    if (e < bestEnergy) {
-      bestEnergy = e;
-      for (int i = 0; i < height; ++i) bestSeam[i] = tempSeam[i];
+  for (int x = 0; x < width; ++x) {
+    cost[x] = new (std::nothrow) int[height];
+    parent[x] = new (std::nothrow) int[height];
+    if (!cost[x] || !parent[x]) {
+      for (int k = 0; k <= x; ++k) {
+        delete[] cost[k];
+        delete[] parent[k];
+      }
+      delete[] cost;
+      delete[] parent;
+      return nullptr;
     }
   }
 
-  deleteSeam(tempSeam);
-  return bestSeam;
+  for (int x = 0; x < width; ++x) {
+    cost[x][0] = energy(image, x, 0, width, height);
+    parent[x][0] = x;
+  }
+
+  for (int y = 1; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      int bestPrevX = x;
+      int bestPrevCost = cost[x][y - 1];
+
+      if (x - 1 >= 0 && cost[x - 1][y - 1] <= bestPrevCost) {
+        bestPrevCost = cost[x - 1][y - 1];
+        bestPrevX = x - 1;
+      }
+      if (x + 1 < width && cost[x + 1][y - 1] < bestPrevCost) {
+        bestPrevCost = cost[x + 1][y - 1];
+        bestPrevX = x + 1;
+      }
+
+      cost[x][y] = energy(image, x, y, width, height) + bestPrevCost;
+      parent[x][y] = bestPrevX;
+    }
+  }
+
+  int bestEndX = 0;
+  int bestEnergy = cost[0][height - 1];
+  for (int x = 1; x < width; ++x) {
+    if (cost[x][height - 1] < bestEnergy) {
+      bestEnergy = cost[x][height - 1];
+      bestEndX = x;
+    }
+  }
+
+  int* seam = createSeam(height);
+  if (!seam) {
+    for (int x = 0; x < width; ++x) { delete[] cost[x]; delete[] parent[x]; }
+    delete[] cost;
+    delete[] parent;
+    return nullptr;
+  }
+
+  int x = bestEndX;
+  for (int y = height - 1; y >= 0; --y) {
+    seam[y] = x;
+    x = parent[x][y];
+  }
+
+  for (int i = 0; i < width; ++i) {
+    delete[] cost[i];
+    delete[] parent[i];
+  }
+  delete[] cost;
+  delete[] parent;
+
+  return seam;
 }
 
 int* findMinHorizontalSeam(Pixel** image, int width, int height) {
-  int* bestSeam = createSeam(width);
-  int* tempSeam = createSeam(width);
-  if (!bestSeam || !tempSeam) {
-    deleteSeam(bestSeam);
-    deleteSeam(tempSeam);
+  if (!image || width <= 0 || height <= 0) return nullptr;
+
+  int** cost = new (std::nothrow) int*[width];
+  int** parent = new (std::nothrow) int*[width];
+  if (!cost || !parent) {
+    delete[] cost;
+    delete[] parent;
     return nullptr;
   }
 
-  int bestEnergy = std::numeric_limits<int>::max();
-
-  for (int start = 0; start < height; ++start) {
-    const int e = loadHorizontalSeam(image, start, width, height, tempSeam);
-    if (e < bestEnergy) {
-      bestEnergy = e;
-      for (int i = 0; i < width; ++i) bestSeam[i] = tempSeam[i];
+  for (int x = 0; x < width; ++x) {
+    cost[x] = new (std::nothrow) int[height];
+    parent[x] = new (std::nothrow) int[height];
+    if (!cost[x] || !parent[x]) {
+      for (int k = 0; k <= x; ++k) {
+        delete[] cost[k];
+        delete[] parent[k];
+      }
+      delete[] cost;
+      delete[] parent;
+      return nullptr;
     }
   }
 
-  deleteSeam(tempSeam);
-  return bestSeam;
+  for (int y = 0; y < height; ++y) {
+    cost[0][y] = energy(image, 0, y, width, height);
+    parent[0][y] = y;
+  }
+
+  for (int x = 1; x < width; ++x) {
+    for (int y = 0; y < height; ++y) {
+      int bestPrevY = y;
+      int bestPrevCost = cost[x - 1][y];
+
+      if (y - 1 >= 0 && cost[x - 1][y - 1] <= bestPrevCost) {
+        bestPrevCost = cost[x - 1][y - 1];
+        bestPrevY = y - 1;
+      }
+      if (y + 1 < height && cost[x - 1][y + 1] < bestPrevCost) {
+        bestPrevCost = cost[x - 1][y + 1];
+        bestPrevY = y + 1;
+      }
+
+      cost[x][y] = energy(image, x, y, width, height) + bestPrevCost;
+      parent[x][y] = bestPrevY;
+    }
+  }
+
+  int bestEndY = 0;
+  int bestEnergy = cost[width - 1][0];
+  for (int y = 1; y < height; ++y) {
+    if (cost[width - 1][y] < bestEnergy) {
+      bestEnergy = cost[width - 1][y];
+      bestEndY = y;
+    }
+  }
+
+  int* seam = createSeam(width);
+  if (!seam) {
+    for (int x = 0; x < width; ++x) { delete[] cost[x]; delete[] parent[x]; }
+    delete[] cost;
+    delete[] parent;
+    return nullptr;
+  }
+
+  int y = bestEndY;
+  for (int x = width - 1; x >= 0; --x) {
+    seam[x] = y;
+    y = parent[x][y];
+  }
+
+  for (int i = 0; i < width; ++i) {
+    delete[] cost[i];
+    delete[] parent[i];
+  }
+  delete[] cost;
+  delete[] parent;
+
+  return seam;
 }
 
 void removeVerticalSeam(Pixel** image, int width, int height, int* verticalSeam) {
