@@ -5,7 +5,7 @@
 
 #include "functions.h"
 
-if (!image) return 0;
+
 
 static int clampInt(int v, int lo, int hi) {
   if (v < lo) return lo;
@@ -114,6 +114,7 @@ bool outputImage(const std::string& filename, Pixel** image, int width, int heig
 }
 
 int energy(Pixel** image, int x, int y, int width, int height) {
+  if (!image) return 0;
   x = clampInt(x, 0, width - 1);
   y = clampInt(y, 0, height - 1);
 
